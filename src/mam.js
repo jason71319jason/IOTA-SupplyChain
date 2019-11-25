@@ -4,9 +4,13 @@ const Utils = require('utils')
 const DataGen = require('./data-generator.js')
 const { asciiToTrytes, trytesToAscii } = require('@iota/converter')
  
-const mode = 'restricted'
-const key = 'key'
-const provider = 'https://nodes.devnet.iota.org'
+const defaultMode = 'restricted'
+const defaultKey = 'key'
+const defaultProvider = 'https://nodes.devnet.iota.org'
+
+const initMam = (prodiver) => {
+    return Mam.init(prodiver);
+}
 
 const publish = async (data, mamState) => {
     const trytes = asciiToTrytes(JSON.stringify(data))
@@ -27,6 +31,36 @@ const publish = async (data, mamState) => {
 
 }
  
+const createChannel = async (mamState, mode, key) => {
+    const newMamState = Mam.changeMode(mamState, mode, key)
+    return newMamState
+}
+
+const appendToChannel = async (data, mamState) => {
+    const newMamState = {
+        subscribed: [],
+        channel: {
+            side_key: mamState.secretKey,
+            mode: 'restricted',
+            next_root: mamState.next,
+            security: 2,
+            start: mamState.start,
+            count: 1,
+            next_count: 1,
+            index: 0,
+        },
+        seed: mamState.seed,
+    }
+    try {
+        mamState = newMamState
+        const message = await publish(data);    
+        return null    
+    } catch(error) {
+        console.log('[Error] Append', error);
+        return null    
+    }
+}
+
 const sensorPublish = async (mamState) => {
     let temp = await getTempature()
     let hum = await getHumidity()

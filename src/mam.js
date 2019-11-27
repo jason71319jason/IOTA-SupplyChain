@@ -9,20 +9,18 @@ const initMam = (prodiver) => {
 
 const publish = async (mamState, data) => {
     const trytes = asciiToTrytes(JSON.stringify(data))
-    const message = Mam.create(mamState, trytes)
+    const message = await Mam.create(mamState, trytes)
     const depth = 3
     const minWeightMagnitude = 9
-
+    
     try {
         mamState = message.state
         await Mam.attach(message.payload, message.address, depth, minWeightMagnitude)
-        return message
-
+        return message 
     } catch(error) {
         console.log('[Error] MAM', error)
         return null    
     }
-
 }
  
 const createChannel = async (mamState, mode, key) => {
@@ -37,50 +35,26 @@ const startRecord = async (mamState) => {
        Tiimestamp: (new Date()).toLocaleString()    
    }
    try {
-        const message = await publish(mamState, startData)   
-        return message   
+        const message = await publish(mamState, startData)  
+        return message
    } catch(error) {
         console.log('[Error] Start', error)   
         return null   
    }
 }
 
-const appendToChannel = async (mamState, data) => {
-    const newMamState = {
-        subscribed: [],
-        channel: {
-            side_key: mamState.channel.side_key,
-            mode: 'restricted',
-            next_root: mamState.channel.next_root,
-            security: 2,
-            start: mamState.channel.start,
-            count: 1,
-            next_count: 1,
-            index: 0,
-        },
-        seed: mamState.seed,
-    }
-    try {
-        mamState = newMamState
-        const message = await publish(mamState, data)    
-        return mamState    
-    } catch(error) {
-        console.log('[Error] Append', error);
-        return null    
-    }
-}
-
-const sensorPublish = async (mamState, numberOfRecord, delayTimePerRecord, provider, mode, key) => {
+const sensorPublish = async (mamState, numberOfRecord, delayTimePerRecord) => {
     try {    
         let temp = await DataGen.getTempature()
+//        console.log('temp= '+temp);    
         let hum = await DataGen.getHumidity()
+//        console.log('hum= '+hum);    
  
         let msg = await publish(mamState, {
                 Tempature: temp,
                 Humidity: hum,
                 Timestamp: (new Date()).toLocaleString()});
-        const root = msg.root
-
+        
         for(let i=0; i<numberOfRecord-1; i++) {
             temp = await DataGen.getTempature()
             hum = await DataGen.getHumidity()
@@ -93,7 +67,16 @@ const sensorPublish = async (mamState, numberOfRecord, delayTimePerRecord, provi
         return msg    
     } catch(error) {
         console.log(error)
-        return null    
+        return null 
+    }
+}
+
+const humanPublish = async (mamState, data) => {
+    try {
+        const message = await publish(mamState, data);    
+        return message    
+    } catch (error) {
+        console.log('[Human Publish Error]', error)    
     }
 }
 

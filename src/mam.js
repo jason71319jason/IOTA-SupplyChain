@@ -7,8 +7,17 @@ const initMam = (prodiver) => {
     return Mam.init(prodiver);
 }
 
-const publish = async (mamState, data) => {
-    const trytes = asciiToTrytes(JSON.stringify(data))
+const publish = async (mamState, data, useSignature = true) => {
+    let trytes = asciiToTrytes(JSON.stringify(data))
+    if(useSignature) {
+        const keys = await Utils.genKey()
+        const signature = await Utils.sign(data, keys.prikey)
+		let signData = {}	
+		signData.data = data	
+        signData.signature = signature
+        signData.pubkey = keys.pubkey
+    	trytes = asciiToTrytes(JSON.stringify(signData))
+    }
     const message = await Mam.create(mamState, trytes)
     const depth = 3
     const minWeightMagnitude = 9
@@ -46,9 +55,7 @@ const startRecord = async (mamState) => {
 const sensorPublish = async (mamState, numberOfRecord, delayTimePerRecord) => {
     try {    
         let temp = await DataGen.getTempature()
-//        console.log('temp= '+temp);    
         let hum = await DataGen.getHumidity()
-//        console.log('hum= '+hum);    
  
         let msg = await publish(mamState, {
                 Tempature: temp,
@@ -80,11 +87,26 @@ const humanPublish = async (mamState, data) => {
     }
 }
 
-const fetch = async (root, mode, key) => {
-    try {    
-        const result = await Mam.fetch(root, mode, key)
-        console.log(result)    
-        return result    
+const fetch = async (root, mode, key, verify = true) => {
+    try {
+        if(verify) {
+            let result = []
+            await Mam.fetch(root, mode, key, async (res)=>{
+				const jsonData = JSON.parse(trytesToAscii(res))
+                if(Utils.verify(JSON.stringify(jsonData.data), jsonData.signature, jsonData.pubkey))
+                    result.push(jsonData)
+				else
+					console.log(`fail to verify ${jsonData}`)
+            })    
+            return result    
+        } else {
+			let result = []	
+            await Mam.fetch(root, mode, key, async (res) => {
+				const jsonData = JSON.parse(trytesToAscii(res))
+				result.push(jsonData)	
+			})
+            return result
+        }
     } catch(error) {
         console.log(error)    
         return null

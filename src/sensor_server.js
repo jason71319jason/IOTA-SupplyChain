@@ -31,12 +31,18 @@ app.get('/', function(req, res) {
 });
 
 app.post('/startgenerate', async (req, res) => {
-    if(req.body) {
-        console.log(req.body)    
-        await generateData(req.body.state, req.body.num, req.body.delay)
-    } else {
-        res.send(JSON.stringify({result: 'Fail'}));   
+    try {
+        let mamState = Mam.initMam(defaultProvider)
+        mamState = await Mam.createChannel(mamState, defaultMode, defaultKey)
+        mamState  = req.body.mamState
+        const num = req.body.num
+        const delay = req.body.delay
+        let msg = await generateData(mamState, num, delay)
+        res.send({status: "success"})
+    } catch (error) {
+        console.log(error)
+		res.send({status: "fail"})
     }
 });
 
-server.listen(3001)
+server.listen(30000)

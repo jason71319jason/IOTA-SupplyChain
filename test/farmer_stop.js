@@ -1,5 +1,6 @@
 const request = require('request')
 const Mam = require('@iota/mam')
+const defaultProvider = 'https://nodes.devnet.iota.org'
 const {
   asciiToTrytes,
   trytesToAscii
@@ -42,20 +43,18 @@ const logData = async (data) => console.log('fetch and parsed', JSON.parse(
   trytesToAscii(data)), '\n')
 
 const test2 = async () => {
+  Mam.init(defaultProvider)
   let root = 'GKSPGZYBJAOVYZHGSECGIYXWLJPBXYEZGYSZWI9C9JXUGJBMEUEEQLYFGACSMY9QDBSTJTJHCMPANNCDW'
   let mode = 'restricted'
   let key = 'KEY'
   console.log('fetching')
+  result = []
   await Mam.fetch(root, mode, key.padEnd(81, '9'), async (res) => {
     const jsonData = JSON.parse(trytesToAscii(res))
     console.log(jsonData)
     result.push(jsonData)
   })
-  // const res = await Mam.fetch(root, mode, key.padEnd(81, '9'), async (res) => {
-  //   const jsonData = JSON.parse(trytesToAscii(res))
-  //   console.log(jsonData)
-  //   result.push(jsonData)
-  // })
+
   console.log('end')
 }
 

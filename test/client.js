@@ -1,7 +1,9 @@
 const express = require('express')
 const http = require('http')
 const bodyParser = require('body-parser')
-const MyMam = require('./mam.js')
+const Mam = require('@iota/mam')
+const Utils = require('./utils.js')
+
 const defaultMode = 'restricted'
 const defaultKey = 'KEY'
 const defaultProvider = 'https://nodes.devnet.iota.org'
@@ -32,7 +34,8 @@ app.get('/', function(req, res) {
 app.get('/root', async (req, res) => {
   try {
     res.send({
-      root: currentRoot
+      root: currentRoot,
+      side_key: defaultKey.padEnd(81, '9')
     })
   } catch (error) {
     console.log(error)
@@ -44,13 +47,42 @@ app.get('/root', async (req, res) => {
 
 server.listen(3000)
 
+const publish = async (mamState, data) => {
+  let trytes = asciiToTrytes(JSON.stringify(data))
+
+  const message = await Mam.create(mamState, trytes)
+  const depth = 3
+  const minWeightMagnitude = 9
+
+  try {
+    mamState = message.state
+    await Mam.attach(message.payload, message.address, depth, minWeightMagnitude)
+    return message
+  } catch (error) {
+    console.log('[Error] MAM', error)
+    return null
+  }
+}
+
 const run = async () => {
-  mamState = await MyMam.initMam(defaultProvider, fakeSeed)
-  mamState = await MyMam.createChannel(mamState, defaultMode, defaultKey)
-  while (true) {
-    msg = await MyMam.sensorPublish(mamState, delayTime)
-    console.log(msg)
-    currentRoot = msg.root
+  try {
+    mamState = await Mam.init(defaultProvider, fakeSeed)
+    mamState = await Mam.changeMode(mamState, defaultMode, defaultKey)
+    while (true) {
+
+      let temp = await Utils.getTempature()
+      let hum = await Utils.getHumidity()
+      let msg = await publish(mamState, {
+        Tempature: temp,
+        Humidity: hum,
+        Timestamp: (new Date()).toLocaleString()
+      });
+      await Utils.delay(delayTime)
+      console.log(msg)
+      currentRoot = msg.root
+    }
+  } catch (error) {
+    console.log(error)
   }
 }
 

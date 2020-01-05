@@ -9,19 +9,18 @@ const {
 const test = async () => {
   try {
 
-    const jsonData = {
-      product_name: process.argv[2],
-      farmer_name: process.argv[3],
+    const data = {
+      product_id: process.argv[2],
       timestamp: (new Date()).toLocaleString(),
       status: 'Stop',
     }
     const options = {
-      url: 'http://localhost:3001/stop',
+      url: 'http://localhost:5000/Stop',
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      json: jsonData
+      json: data
     };
 
     request(options, function(error, response, data) {
@@ -37,25 +36,6 @@ const test = async () => {
       status: "fail"
     })
   }
-}
-
-const logData = async (data) => console.log('fetch and parsed', JSON.parse(
-  trytesToAscii(data)), '\n')
-
-const test2 = async () => {
-  Mam.init(defaultProvider)
-  let root = 'GKSPGZYBJAOVYZHGSECGIYXWLJPBXYEZGYSZWI9C9JXUGJBMEUEEQLYFGACSMY9QDBSTJTJHCMPANNCDW'
-  let mode = 'restricted'
-  let key = 'KEY'
-  console.log('fetching')
-  result = []
-  await Mam.fetch(root, mode, key.padEnd(81, '9'), async (res) => {
-    const jsonData = JSON.parse(trytesToAscii(res))
-    console.log(jsonData)
-    result.push(jsonData)
-  })
-
-  console.log('end')
 }
 
 test()

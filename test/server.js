@@ -19,23 +19,6 @@ const sensor2url = {
 const app = express()
 const id2data = {}
 
-const publish = async (mamState, data) => {
-  let trytes = asciiToTrytes(JSON.stringify(data))
-
-  const message = await mam.create(mamState, trytes)
-  const depth = 3
-  const minWeightMagnitude = 9
-
-  try {
-    mamState = message.state
-    await mam.attach(message.payload, message.address, depth, minWeightMagnitude)
-    return message
-  } catch (error) {
-    console.log('[Error] MAM', error)
-    return null
-  }
-}
-
 app.use(bodyParser.json({
   limit: '1mb'
 }));
@@ -121,11 +104,6 @@ app.post('/Stop', async (req, res) => {
         console.log(error)
       }
     })
-    // result.forEach(async (data) => {
-    //   console.log(data)
-    //   msg = await publish(mamState, data)
-    //   console.log(msg)
-    // })
     res.send({
       status: 'success',
       product_id: product_id,
@@ -141,5 +119,40 @@ app.post('/Stop', async (req, res) => {
     })
   }
 });
+
+app.post('/Search', async (req, res) => {
+  try {
+    const product_id = req.body.product_id
+    const product_data = id2data[product_id]
+    mamState = mam.init(provider)
+    await mam.fetch(product_data.product_root, mode, product_data.product_key, async (response) => {
+      try {
+        const data = JSON.parse(trytesToAscii(response))
+        console.log(data)
+      } catch (error) {
+        console.log(error)
+      }
+    })
+  } catch (error) {
+    console.log(error)
+  }
+});
+
+const publish = async (mamState, data) => {
+  let trytes = asciiToTrytes(JSON.stringify(data))
+
+  const message = await mam.create(mamState, trytes)
+  const depth = 3
+  const minWeightMagnitude = 9
+
+  try {
+    mamState = message.state
+    await mam.attach(message.payload, message.address, depth, minWeightMagnitude)
+    return message
+  } catch (error) {
+    console.log('[Error] MAM', error)
+    return null
+  }
+}
 
 server.listen(5000)

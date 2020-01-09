@@ -65,27 +65,28 @@ const publish = async (mamState, data) => {
 }
 
 const run = async () => {
-  try {
+  
     mamState = mam.init(provider)
     mamState = mam.changeMode(mamState, mode, key)
     while (true) {
+      try {
+        let temp = utils.getTempature()
+        let hum = utils.getHumidity()
 
-      let temp = utils.getTempature()
-      let hum = utils.getHumidity()
-
-      let msg = await publish(mamState, {
-        Tempature: temp,
-        Humidity: hum,
-        Timestamp: (new Date()).toLocaleString()
-      });
-      console.log(msg)
-      await utils.delay(delayTime)
-      sensorCurrentRoot = msg.root
+        let msg = await publish(mamState, {
+          Tempature: temp,
+          Humidity: hum,
+          Timestamp: (new Date()).toLocaleString()
+        });
+        console.log(msg)
+        await utils.delay(delayTime)
+        sensorCurrentRoot = msg.root
+      } catch (error) {
+       console.log(error)
+      }
     }
-  } catch (error) {
-    console.log(error)
-  }
+  
 }
 
-server.listen(process.argv[2])
+server.listen(5000)
 run()
